@@ -1,0 +1,245 @@
+import React from 'react'
+import * as ol from 'ol'
+
+import Draw from 'ol/interaction/Draw'
+import Overlay from 'ol/Overlay'
+import {Polygon} from 'ol/geom'
+import {Vector as VectorSource} from 'ol/source'
+import {Vector as VectorLayer} from 'ol/layer'
+import {getArea, getLength} from 'ol/sphere'
+import Select from 'ol/interaction/Select'
+
+import Style from 'ol/style/Style';
+import Fill from 'ol/style/Fill';
+import Stroke from 'ol/style/Stroke';
+import CircleStyle from 'ol/style/Circle'
+import Text from 'ol/style/Text'
+import {altKeyOnly, click} from 'ol/events/condition'
+
+import { unByKey } from 'ol/Observable';
+import {GeoJSON} from 'ol/format'
+import {getUid} from 'ol/util'
+
+import Button from '@mui/material/Button'
+
+let sketch: any,
+    helpTooltipElement: any,
+    helpTooltip: any,
+    measureTooltipElement: any,
+    measureTooltip: any,
+    draw: any,
+    text: any;
+let select: any = null;
+let i: number = 1
+
+
+
+const continuePolygonMsg: String = 'Click to continue drawing the polygon'
+
+export type Props = {map: any}
+
+class MakePolygon extends React.Component<Props>{
+    olMap: any;
+
+    constructor(props: any){
+        super(props)
+
+        this.olMap = this.props.map;
+        this.makePolygon = this.makePolygon.bind(this)
+    }
+
+    formatArea(polygon: any): String {
+        const area = getArea(polygon);
+        let output: String;
+        if (area > 10000) {
+          output = Math.round((area / 1000000) * 100) / 100 + ' ' + 'km<sup>2</sup>';
+        } else {
+          output = Math.round(area * 100) / 100 + ' ' + 'm<sup>2</sup>';
+        }
+        return output;
+      };
+      
+    createHelpTooltip(): void {
+        if (helpTooltipElement) {
+          helpTooltipElement.parentNode.removeChild(helpTooltipElement);
+        }
+        helpTooltipElement = document.createElement('div');
+        helpTooltipElement.className = 'ol-tooltip hidden';
+        helpTooltip = new Overlay({
+          element: helpTooltipElement,
+          offset: [15, 0],
+          positioning: 'center-left',
+        });
+        this.olMap.addOverlay(helpTooltip);
+      }
+
+    createMeasureTooltip(): void {
+        if (measureTooltipElement) {
+          measureTooltipElement.parentNode.removeChild(measureTooltipElement);
+        }
+        measureTooltipElement = document.createElement('div');
+        measureTooltipElement.className = 'ol-tooltip ol-tooltip-measure';
+        measureTooltip = new Overlay({
+          element: measureTooltipElement,
+          offset: [0, -15],
+          positioning: 'bottom-center',
+          stopEvent: false,
+          insertFirst: false,
+        });
+        this.olMap.addOverlay(measureTooltip);
+      }
+
+    addInteraction() {
+        const type = 'Polygon'
+        draw = new Draw({
+          source: new VectorSource(),
+          type: type,
+          style: new Style({
+            fill: new Fill({
+              color: 'rgba(255, 255, 255, 0.2)',
+            }),
+            stroke: new Stroke({
+              color: 'rgba(0, 0, 0, 0.5)',
+              lineDash: [10, 10],
+              width: 2,
+            }),
+            image: new CircleStyle({
+              radius: 5,
+              stroke: new Stroke({
+                color: 'rgba(0, 0, 0, 0.7)',
+              }),
+              fill: new Fill({
+                color: 'rgba(0, 10, 255, 0.2)',
+              }),
+            }),
+          }),
+        });
+  
+        this.olMap.addInteraction(draw)
+  
+        this.createHelpTooltip()
+        this.createMeasureTooltip()
+  
+        let listener: any;
+  
+        draw.on('drawstart', (evt: any) => {
+          sketch = evt.feature;
+          let tooltipCoord: any = evt.coordinate;
+  
+          listener = sketch.getGeometry().on('change', (evt: any) => {
+            const geom = evt.target;
+            let output: any;
+            if (geom instanceof Polygon) {
+              output = this.formatArea(geom);
+              tooltipCoord = geom.getInteriorPoint().getCoordinates();
+            }
+            measureTooltipElement.innerHTML = output;
+            measureTooltip.setPosition(tooltipCoord);
+          });
+        });
+  
+        draw.on('drawend', () => {
+          measureTooltipElement.className = 'ol-tooltip ol-tooltip-static';
+          measureTooltip.setOffset([0, -7]);
+          measureTooltipElement = null;
+          this.createMeasureTooltip();
+          unByKey(listener);
+          text = prompt( 'Enter name', '')
+          this.olMap.addLayer( new VectorLayer({
+            source: new VectorSource({
+              features: [sketch]
+            }),
+            updateWhileInteracting: true,
+            style: new Style({
+              fill: new Fill({
+                color: '#ffcc338f',
+              }),
+              stroke: new Stroke({
+                color: '#ffcc33',
+                width: 2,
+              }),
+              image: new CircleStyle({
+                radius: 7,
+                fill: new Fill({
+                  color: '#ffcc33',
+                }),
+              }),
+              text: new Text({
+                  text: text,
+                  font: 'bold 15px serif',
+                  textAlign: 'start',
+              }),
+            }),
+          }),)
+
+        });
+      }
+  
+      pointerMoveHandler(evt: any) {
+        if (evt.dragging) {
+          return;
+        }
+        let helpMsg: String = 'Click to start drawing';
+        if (sketch) {
+          const geom = sketch.getGeometry();
+          if (geom instanceof Polygon) {
+            helpMsg = continuePolygonMsg;
+          }
+        }  
+        helpTooltipElement.innerHTML = helpMsg;
+        helpTooltip.setPosition(evt.coordinate);
+      
+        helpTooltipElement.classList.remove('hidden');
+      };
+
+      changeName(){
+        console.log(this.olMap)
+        if (select !== null) {
+          this.olMap.removeInteraction(select);
+        }
+        select = new Select({
+            style: new Style({
+                  fill: new Fill({
+                    color: '#eeeeee',
+                  }),
+                  stroke: new Stroke({
+                    color: 'rgba(255, 255, 255, 0.7)',
+                    width: 2,
+                  }),
+                 
+              }),
+            condition: function (mapBrowserEvent) {
+              return click(mapBrowserEvent) && altKeyOnly(mapBrowserEvent);
+            },
+        })
+        console.log(select)
+        if (select !== null) {
+          this.olMap.addInteraction(select);
+
+          select.on('select', (e: any) => {
+              let id: string = e.target.getFeatures().ol_uid
+              console.log( e.target.getFeatures(),  e.selected )
+          });
+        
+        }
+      }
+  
+      makePolygon(){
+        console.log('make')
+        this.addInteraction()
+        this.changeName()
+        this.olMap.on('pointermove', this.pointerMoveHandler)
+        this.olMap.getViewport().addEventListener('mouseout', function () {
+          helpTooltipElement.classList.add('hidden');
+        });
+      }
+
+      render(){          
+          console.log(this.props)
+          return (
+            <Button variant="contained" onClick={this.makePolygon}>Make Polygon</Button>
+          )
+      }
+}
+
+export default MakePolygon
