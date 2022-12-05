@@ -151,8 +151,9 @@ class MakePolygon extends React.Component<Props>{
           text = prompt( 'Enter name', '')
           source = new VectorSource({
             features: [sketch],
-            format: new GeoJSON,
+            format: new GeoJSON(),
           })
+          // source.getFeatures().setProperties({text: text})
           const polygon: any = new VectorLayer({
             source: source,
             updateWhileInteracting: true,
@@ -177,6 +178,9 @@ class MakePolygon extends React.Component<Props>{
               }),
             }),
           })
+          source.setProperties({"text": `${text}`})
+
+
           this.olMap.addLayer( polygon )
           masOfSourses.push(source)
         });
@@ -225,7 +229,6 @@ class MakePolygon extends React.Component<Props>{
 
           select.on('select', (e: any) => {
               let id: string = e.target.getFeatures().ol_uid
-              // console.log( e.target.getFeatures(),  e.selected )
           });
         
         }
@@ -243,6 +246,7 @@ class MakePolygon extends React.Component<Props>{
 
       saveGeoJSON(){
         masOfSourses.forEach( (el: any) => {
+          console.log(el.getProperties())
           console.log(new GeoJSON().writeFeatures(el.getFeatures()))
         })
 
