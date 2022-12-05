@@ -32,7 +32,9 @@ let sketch: any,
     text: any,
     select: any = null,
     masOfSourses: any[] = [],
-    source: any
+    masOfNameOfSourses: any[] = [],
+    source: any,
+    polygon: any
 
 
 
@@ -154,7 +156,7 @@ class MakePolygon extends React.Component<Props>{
             format: new GeoJSON(),
           })
           // source.getFeatures().setProperties({text: text})
-          const polygon: any = new VectorLayer({
+          polygon = new VectorLayer({
             source: source,
             updateWhileInteracting: true,
             style: new Style({
@@ -178,10 +180,11 @@ class MakePolygon extends React.Component<Props>{
               }),
             }),
           })
-          source.setProperties({"text": `${text}`})
+          // polygon.getFeatures()
 
 
           this.olMap.addLayer( polygon )
+          masOfNameOfSourses.push(text)
           masOfSourses.push(source)
         });
       }
@@ -245,9 +248,13 @@ class MakePolygon extends React.Component<Props>{
       }
 
       saveGeoJSON(){
-        masOfSourses.forEach( (el: any) => {
+        masOfSourses.forEach( (el: any, index) => {
           console.log(el.getProperties())
-          console.log(new GeoJSON().writeFeatures(el.getFeatures()))
+          let val: any = JSON.parse(new GeoJSON().writeFeatures(el.getFeatures())) 
+          val.features[0].properties = `{text: ${masOfNameOfSourses[index]}}`
+          console.log(JSON.stringify(val))
+          // console.log(JSON.parse(new GeoJSON().writeFeatures(el.getFeatures())).features[0].properties)
+          // new Location().href = 'data:application/octet-stream,' + encodeURIComponent(new GeoJSON().writeFeatures(el.getFeatures()))
         })
 
       }
