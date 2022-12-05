@@ -1,5 +1,6 @@
 import React from 'react'
 import * as ol from 'ol'
+import './MakePolygon.css'
 
 import Draw from 'ol/interaction/Draw'
 import Overlay from 'ol/Overlay'
@@ -28,9 +29,11 @@ let sketch: any,
     measureTooltipElement: any,
     measureTooltip: any,
     draw: any,
-    text: any;
-let select: any = null;
-let i: number = 1
+    text: any,
+    select: any = null,
+    masOfSourses: any[] = [],
+    source: any
+
 
 
 
@@ -40,12 +43,13 @@ export type Props = {map: any}
 
 class MakePolygon extends React.Component<Props>{
     olMap: any;
-
     constructor(props: any){
         super(props)
 
         this.olMap = this.props.map;
+
         this.makePolygon = this.makePolygon.bind(this)
+        this.saveGeoJSON = this.saveGeoJSON.bind(this)
     }
 
     formatArea(polygon: any): String {
@@ -145,10 +149,12 @@ class MakePolygon extends React.Component<Props>{
           this.createMeasureTooltip();
           unByKey(listener);
           text = prompt( 'Enter name', '')
-          this.olMap.addLayer( new VectorLayer({
-            source: new VectorSource({
-              features: [sketch]
-            }),
+          source = new VectorSource({
+            features: [sketch],
+            format: new GeoJSON,
+          })
+          const polygon: any = new VectorLayer({
+            source: source,
             updateWhileInteracting: true,
             style: new Style({
               fill: new Fill({
@@ -170,8 +176,9 @@ class MakePolygon extends React.Component<Props>{
                   textAlign: 'start',
               }),
             }),
-          }),)
-
+          })
+          this.olMap.addLayer( polygon )
+          masOfSourses.push(source)
         });
       }
   
@@ -218,7 +225,7 @@ class MakePolygon extends React.Component<Props>{
 
           select.on('select', (e: any) => {
               let id: string = e.target.getFeatures().ol_uid
-              console.log( e.target.getFeatures(),  e.selected )
+              // console.log( e.target.getFeatures(),  e.selected )
           });
         
         }
@@ -234,10 +241,20 @@ class MakePolygon extends React.Component<Props>{
         });
       }
 
+      saveGeoJSON(){
+        masOfSourses.forEach( (el: any) => {
+          console.log(new GeoJSON().writeFeatures(el.getFeatures()))
+        })
+
+      }
+
       render(){          
           console.log(this.props)
           return (
-            <Button variant="contained" onClick={this.makePolygon}>Make Polygon</Button>
+            <div className="toolbar">
+              <Button variant="contained" onClick={this.makePolygon}>Make Polygon</Button>
+              <Button variant="contained" onClick={this.saveGeoJSON}>Save GeoJSON</Button>
+            </div>
           )
       }
 }

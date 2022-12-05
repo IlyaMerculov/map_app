@@ -15,6 +15,9 @@ import {GeoJSON} from 'ol/format'
 
 import MakePolygon from './components/MakePolygon'
 
+import Button from '@mui/material/Button'
+
+
 let dragAndDropInteraction: any;
 
 class App extends React.Component{
@@ -34,6 +37,7 @@ class App extends React.Component{
           zoom: 2
         })
       })
+
     }
 
     setInteraction() {
@@ -59,6 +63,8 @@ class App extends React.Component{
       this.olMap.addInteraction(dragAndDropInteraction);
     }
 
+    
+
     componentDidMount(){
       this.olMap.setTarget("map") 
       this.setInteraction()      
@@ -67,9 +73,7 @@ class App extends React.Component{
     render(){
       return (
         <div id="map" >
-          <div className="toolbar">
             <MakePolygon map={this.olMap}/>
-          </div>
         </div>
       )
     }
