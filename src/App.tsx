@@ -10,6 +10,11 @@ import View from 'ol/View';
 import {Vector as VectorSource} from 'ol/source'
 import {Vector as VectorLayer} from 'ol/layer'
 
+import Style from 'ol/style/Style';
+import Text from 'ol/style/Text';
+import Fill from 'ol/style/Fill';
+import Stroke from 'ol/style/Stroke';
+
 import DragAndDrop from 'ol/interaction/DragAndDrop'
 import {GeoJSON} from 'ol/format'
 
@@ -46,7 +51,7 @@ class App extends React.Component{
       }
       dragAndDropInteraction = new DragAndDrop({
         formatConstructors: [
-          GeoJSON,
+          new GeoJSON(),
         ],
       });
       dragAndDropInteraction.on('addfeatures', (event: any) => {
@@ -56,6 +61,20 @@ class App extends React.Component{
         this.olMap.addLayer(
           new VectorLayer({
             source: vectorSource,
+            style: new Style({
+              fill: new Fill({
+                color: '#1786E78f',
+              }),
+              stroke: new Stroke({
+                color: '#2200FF',
+                width: 2,
+              }),
+                text: new Text({
+                    text: event.features[0].values_.text,
+                    font: 'bold 15px serif',
+                    textAlign: 'start',
+                }),
+            }),
           })
         );
         this.olMap.getView().fit(vectorSource.getExtent());

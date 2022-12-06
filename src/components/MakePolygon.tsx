@@ -19,6 +19,7 @@ import {altKeyOnly, click} from 'ol/events/condition'
 
 import { unByKey } from 'ol/Observable';
 import {GeoJSON} from 'ol/format'
+import {toLonLat} from 'ol/proj'
 import {getUid} from 'ol/util'
 
 import Button from '@mui/material/Button'
@@ -131,12 +132,13 @@ class MakePolygon extends React.Component<Props>{
         draw.on('drawstart', (evt: any) => {
           sketch = evt.feature;
           let tooltipCoord: any = evt.coordinate;
-  
+
           listener = sketch.getGeometry().on('change', (evt: any) => {
-            const geom = evt.target;
+            const geom: any = evt.target;
             let output: any;
             if (geom instanceof Polygon) {
               output = this.formatArea(geom);
+              // console.log(output)
               tooltipCoord = geom.getInteriorPoint().getCoordinates();
             }
             measureTooltipElement.innerHTML = output;
@@ -151,9 +153,13 @@ class MakePolygon extends React.Component<Props>{
           this.createMeasureTooltip();
           unByKey(listener);
           text = prompt( 'Enter name', '')
+          // console.log(toLonLat(sketch.getGeometry().getCoordinates()))
+
           source = new VectorSource({
             features: [sketch],
-            format: new GeoJSON(),
+            format: new GeoJSON({
+              dataProjection: 'EPSG:4326'
+            }),
           })
           // source.getFeatures().setProperties({text: text})
           polygon = new VectorLayer({
@@ -226,7 +232,7 @@ class MakePolygon extends React.Component<Props>{
               return click(mapBrowserEvent) && altKeyOnly(mapBrowserEvent);
             },
         })
-        console.log(select)
+        // console.log(select)
         if (select !== null) {
           this.olMap.addInteraction(select);
 
@@ -249,10 +255,16 @@ class MakePolygon extends React.Component<Props>{
 
       saveGeoJSON(){
         masOfSourses.forEach( (el: any, index) => {
-          console.log(el.getProperties())
-          let val: any = JSON.parse(new GeoJSON().writeFeatures(el.getFeatures())) 
-          val.features[0].properties = `{text: ${masOfNameOfSourses[index]}}`
-          console.log(JSON.stringify(val))
+          // console.log(el.getProperties())
+          let val: any = JSON.parse(new GeoJSON().writeFeatures(el.getFeatures())),
+              lonLatCoordinates: any[] = val.features[0].geometry.coordinates[0].map( (el:any) => {
+                return toLonLat(el)
+            }) 
+          val.features[0].geometry.coordinates[0] = null
+          val.features[0].geometry.coordinates[0] = lonLatCoordinates
+
+          val.features[0].properties = {'text': `${masOfNameOfSourses[index]}`}
+          console.log(JSON.stringify(val), lonLatCoordinates)
           // console.log(JSON.parse(new GeoJSON().writeFeatures(el.getFeatures())).features[0].properties)
           // new Location().href = 'data:application/octet-stream,' + encodeURIComponent(new GeoJSON().writeFeatures(el.getFeatures()))
         })
