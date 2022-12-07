@@ -70,13 +70,14 @@ class App extends React.Component{
                 width: 2,
               }),
                 text: new Text({
-                    text: event.features[0].values_.text,
+                    text: event.features[0].values_.text + ' ( ' + event.features[0].values_.area + ' )',
                     font: 'bold 15px serif',
                     textAlign: 'start',
                 }),
             }),
           })
         );
+
         this.olMap.getView().fit(vectorSource.getExtent());
       });
       this.olMap.addInteraction(dragAndDropInteraction);

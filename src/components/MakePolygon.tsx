@@ -35,9 +35,8 @@ let sketch: any,
     masOfSourses: any[] = [],
     masOfNameOfSourses: any[] = [],
     source: any,
-    polygon: any
-
-
+    polygon: any,
+    output: any;
 
 
 const continuePolygonMsg: String = 'Click to continue drawing the polygon'
@@ -59,9 +58,9 @@ class MakePolygon extends React.Component<Props>{
         const area = getArea(polygon);
         let output: String;
         if (area > 10000) {
-          output = Math.round((area / 1000000) * 100) / 100 + ' ' + 'km<sup>2</sup>';
+          output = Math.round((area / 1000000) * 100) / 100 + ' ' + 'km2';
         } else {
-          output = Math.round(area * 100) / 100 + ' ' + 'm<sup>2</sup>';
+          output = Math.round(area * 100) / 100 + ' ' + 'm2';
         }
         return output;
       };
@@ -135,10 +134,8 @@ class MakePolygon extends React.Component<Props>{
 
           listener = sketch.getGeometry().on('change', (evt: any) => {
             const geom: any = evt.target;
-            let output: any;
             if (geom instanceof Polygon) {
               output = this.formatArea(geom);
-              // console.log(output)
               tooltipCoord = geom.getInteriorPoint().getCoordinates();
             }
             measureTooltipElement.innerHTML = output;
@@ -263,8 +260,8 @@ class MakePolygon extends React.Component<Props>{
           val.features[0].geometry.coordinates[0] = null
           val.features[0].geometry.coordinates[0] = lonLatCoordinates
 
-          val.features[0].properties = {'text': `${masOfNameOfSourses[index]}`}
-          console.log(JSON.stringify(val), lonLatCoordinates)
+          val.features[0].properties = {'text': `${masOfNameOfSourses[index]}`, 'area': `${output}`}
+          console.log(JSON.stringify(val), lonLatCoordinates, output)
           // console.log(JSON.parse(new GeoJSON().writeFeatures(el.getFeatures())).features[0].properties)
           // new Location().href = 'data:application/octet-stream,' + encodeURIComponent(new GeoJSON().writeFeatures(el.getFeatures()))
         })
